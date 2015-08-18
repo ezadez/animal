@@ -32,9 +32,14 @@ var req = http.request(options, function(res) {
 
   res.on('end', function() {
     var body = iconv.convert(Buffer.concat(chunks)).toString();
-    console.log(body);
     jsdom.env(body, function(err, window) {
       var $ = require('jquery')(window);
+      var hrefs = $('.thumbnail_btn01_2 a').map(function() {
+        var regEx = /[?&]desertion_no=(\d+)/g;
+        var href = regEx.exec($(this).attr('href'))[1];
+        return href;
+      }).get();
+      console.log(hrefs);
     });
   });
 });
