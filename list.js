@@ -4,7 +4,6 @@ var jsdom = require('jsdom');
 var jquery = require('jquery');
 var Iconv = require('iconv').Iconv;
 var Buffer = require('buffer').Buffer;
-var async = require('async');
 
 var desertionNos = [];
 
@@ -19,11 +18,11 @@ var toDateString = function (date) {
   return [year, month, day].join('-');
 };
 
-var getListOfOnePage = function(dateString, pagecnt, notifyDone) {
+var getListOfOnePage = function(startdateString, enddateString, pagecnt) {
 
   var postData = querystring.stringify({
-    's_date' : dateString,
-    'e_date' : dateString,
+    's_date' : startdateString,
+    'e_date' : enddateString,
     'pagecnt' : pagecnt
   });
 
@@ -56,13 +55,11 @@ var getListOfOnePage = function(dateString, pagecnt, notifyDone) {
           return href;
         }).get();
         if(newDesertionNos.length > 0) {
+          console.log(newDesertionNos);
           desertionNos = desertionNos.concat(newDesertionNos);
           setTimeout(function() {
-            getListOfOnePage(dateString, pagecnt + 1, notifyDone);
+            getListOfOnePage(startdateString, enddateString, pagecnt + 1);
           }, 1);
-        } else {
-          console.log(dateString);
-          notifyDone();
         }
       });
     });
@@ -77,26 +74,10 @@ var getListOfOnePage = function(dateString, pagecnt, notifyDone) {
 
 };
 
-var getListOfOneDay = function(date, notifyDone) {
-  var dateString = toDateString(date);
-  getListOfOnePage(dateString, 1, notifyDone);
-};
-
-var today = new Date();
-var dates = [];
-var i = 0;
-for( ; i < 2 ; i++) {
-  var date = new Date(today);
-  date.setDate(today.getDate() - i);
-  dates.push(date);
-}
-
-async.each(dates,
-  function(date, notifyDone) {
-    getListOfOneDay(date, notifyDone);
-  },
-  function(err) {
-    console.log("done, total count : " + desertionNos.length);
-  }
-);
+(function() {
+  var enddate = new Date();
+  var startdate = new Date(enddate);
+  startdate.setDate(enddate.getDate() - 60);
+  getListOfOnePage(toDateString(startdate), toDateString(enddate), 1);
+})();
 
