@@ -4,8 +4,9 @@ var jsdom = require('jsdom');
 var jquery = require('jquery');
 var Iconv = require('iconv').Iconv;
 var Buffer = require('buffer').Buffer;
+var MongoClient = require('mongodb').MongoClient;
 
-var desertionNos = [];
+var dbUrl = 'mongodb://localhost:27017/animal';
 
 var toDateString = function (date) {
   var month = '' + (date.getMonth() + 1),
@@ -16,6 +17,25 @@ var toDateString = function (date) {
   if (day.length < 2) day = '0' + day;
 
   return [year, month, day].join('-');
+};
+
+var insertItem = function(desertionNo) {
+  MongoClient.connect(dbUrl, function(err, db) {
+    if(err != null) {
+      console.log('db error : ' + err);
+      return;
+    }
+    var collection = db.collection('list');
+    collection.insert({'desertionNo' : desertionNo},
+    function (err, result) {
+      if(err != null) {
+        console.log('insert error : ' + err);
+        return;
+      }
+      console.log(desertionNo);
+      db.close();
+    });
+  });
 };
 
 var getListOfOnePage = function(startdateString, enddateString, pagecnt) {
@@ -49,14 +69,17 @@ var getListOfOnePage = function(startdateString, enddateString, pagecnt) {
       var body = iconv.convert(Buffer.concat(chunks)).toString();
       jsdom.env(body, function(err, window) {
         var $ = require('jquery')(window);
+        var i = 0;
         var newDesertionNos = $('.thumbnail_btn01_2 a').map(function() {
           var regEx = /[?&]desertion_no=(\d+)/g;
           var href = regEx.exec($(this).attr('href'))[1];
           return href;
         }).get();
+
         if(newDesertionNos.length > 0) {
-          console.log(newDesertionNos);
-          desertionNos = desertionNos.concat(newDesertionNos);
+          for( ; i < newDesertionNos.length ; i++) {
+            insertItem(newDesertionNos[i]);
+          }
           setTimeout(function() {
             getListOfOnePage(startdateString, enddateString, pagecnt + 1);
           }, 1);
