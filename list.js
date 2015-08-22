@@ -5,6 +5,7 @@ var jquery = require('jquery');
 var Iconv = require('iconv').Iconv;
 var Buffer = require('buffer').Buffer;
 var MongoClient = require('mongodb').MongoClient;
+var co = require('co');
 
 var dbUrl = 'mongodb://localhost:27017/animal';
 
@@ -19,23 +20,29 @@ var toDateString = function (date) {
   return [year, month, day].join('-');
 };
 
-var insertItem = function(desertionNo) {
-  MongoClient.connect(dbUrl, function(err, db) {
-    if(err != null) {
-      console.log('db error : ' + err);
-      return;
-    }
-    var collection = db.collection('list');
-    collection.insert({'desertionNo' : desertionNo},
-    function (err, result) {
-      if(err != null) {
-        console.log('insert error : ' + err);
-        return;
-      }
-      console.log(desertionNo);
+var saveItem = function(no, item) {
+  co(function *() {
+    var db = yield MongoClient.connect(dbUrl);
+    var col = db.collection('list');
+    yield col.replaceOne({'no': no}, item, {'upsert': true});
+    db.close();
+  });
+};
+
+var insertItem = function(item) {
+  var status = item['status'];
+  var no = item['no'];
+  if(typeof(status) == 'undfined') return;
+  if(status.indexOf('종료') > -1) {
+    co(function *() {
+      var db = yield MongoClient.connect(dbUrl);
+      var col = db.collection('list');
+      yield col.deleteOne({'no': no });
       db.close();
     });
-  });
+    return;
+  }
+  saveItem(no, item);
 };
 
 var getListOfOnePage = function(startdateString, enddateString, pagecnt) {
@@ -70,15 +77,17 @@ var getListOfOnePage = function(startdateString, enddateString, pagecnt) {
       jsdom.env(body, function(err, window) {
         var $ = require('jquery')(window);
         var i = 0;
-        var newDesertionNos = $('.thumbnail_btn01_2 a').map(function() {
+        var items = $('.thumbnail01').map(function() {
+          var $detail =  $(this).find('.thumbnail_btn01_2 a');
           var regEx = /[?&]desertion_no=(\d+)/g;
-          var href = regEx.exec($(this).attr('href'))[1];
-          return href;
+          var no = regEx.exec($detail.attr('href'))[1];
+          var status = $(this).find('img[alt=상태]').parent().next().text().trim();
+          return {'no' : no, 'status' : status };
         }).get();
 
-        if(newDesertionNos.length > 0) {
-          for( ; i < newDesertionNos.length ; i++) {
-            insertItem(newDesertionNos[i]);
+        if(items.length > 0) {
+          for( ; i < items.length ; i++) {
+            insertItem(items[i]);
           }
           setTimeout(function() {
             getListOfOnePage(startdateString, enddateString, pagecnt + 1);
@@ -101,6 +110,7 @@ var getListOfOnePage = function(startdateString, enddateString, pagecnt) {
   var enddate = new Date();
   var startdate = new Date(enddate);
   startdate.setDate(enddate.getDate() - 60);
+  //TODO : 2달전 DB에서 지우기
   getListOfOnePage(toDateString(startdate), toDateString(enddate), 1);
 })();
 
