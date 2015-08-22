@@ -4,11 +4,12 @@
   "description": "",
   "main": "list.js",
   "dependencies": {
-    "co": "^4.6.0",
     "iconv": "^2.1.10",
     "jquery": "^2.1.4",
     "jsdom": "^3.1.2",
-    "mongodb": "^2.0.42"
+    "mongodb": "^2.0.42",
+    "request": "^2.61.0",
+    "sync": "^0.2.5"
   },
   "devDependencies": {},
   "scripts": {
