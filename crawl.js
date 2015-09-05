@@ -24,7 +24,7 @@ var parseDetailPage = function(body) {
 };
 
 var getDetail = function(no) {
-  var response_and_body = request.sync(request, {
+  var response_and_body = request.sync(null, {
     'url': 'http://www.animal.go.kr' +
       '/portal_rnl/abandonment/public_view.jsp' +
       '?desertion_no=' + no,
@@ -53,7 +53,7 @@ var parseListPage = function(body) {
 };
 
 var getListFromOnePage = function(start_date, end_date, page) {
-  var response_and_body = request.sync(request, {
+  var response_and_body = request.sync(null, {
     'url': 'http://www.animal.go.kr' +
       '/portal_rnl/abandonment/public_list.jsp' +
       '?pagecnt=' + page +
