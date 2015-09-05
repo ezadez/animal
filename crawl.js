@@ -19,8 +19,53 @@ var dateToString = function(date) {
 };
 
 var parseDetailPage = function(body) {
-  // TODO
-  return { 'key': 'value' };
+  var window = jsdom.env.sync(jsdom, body);
+  var $ = jquery(window);
+  var selector = function(domType, content) {
+    var regexText = content[0];
+    for(var i = 1; i < content.length; i++) {
+      regexText += '\\s*' + content[i];
+    }
+    var regex = new RegExp(regexText);
+    return $(domType).filter(function() {
+      return regex.test($(this).text().trim());
+    });
+  }
+
+  var keys = ['공고번호', '품종', '색상',
+      '성별', '중성화여부', '나이/체중',
+      '접수일시', '발생장소', '특징',
+      '공고기한', '보호센터이름', '전화번호',
+      '보호장소', '관할기관', '담당자', '연락처',
+      '특이사항'];
+  var data = {
+    '사진' : $('#aniPhoto img.photoArea').attr('src'),
+  };
+  for(var i = 0; i < keys.length; i++) {
+    var key = keys[i];
+    data[key] = selector('th', key).next().text().trim().replace(/\s+/g, ' ');
+  }
+  window.close();
+
+  //축종 분류
+  var regex = /\[(.+)\]\s*(.+)/;
+  var group = regex.exec(data['품종']);
+  data['축종'] = group[1];
+  data['품종'] = group[2];
+  //나이/체중 분류
+  regex = /(\S+)\s*\/\s*(\S+)\s*\(kg\)/i;
+  var group = regex.exec(data['나이/체중']);
+  data['나이'] = group[1];
+  data['체중'] = group[2];
+  delete data['나이/체중'];
+  //공고기한 시작끝 분류
+  regex = /(\S+)\s*~\s*(\S+)/;
+  var group = regex.exec(data['공고기한']);
+  data['공고시작'] = group[1];
+  data['공고끝'] = group[2];
+  delete data['공고기한'];
+
+  return data;
 };
 
 var getDetail = function(no) {
@@ -46,7 +91,7 @@ var parseListPage = function(body) {
     var regex = /[?&]desertion_no=(\d+)/g;
     var no = regex.exec($detail.attr('href'))[1];
     var status = $this.find('img[alt=상태]').parent().next().text().trim();
-    return { 'no' : no, 'status' : status };
+    return { 'no' : no, '상태' : status };
   }).get();
   window.close();
   return items;
@@ -77,14 +122,14 @@ var deleteItem = function(no) {
 
 var saveItem = function(item) {
   var no = item['no'];
-  var status = item['status'];
+  var status = item['상태'];
   if(typeof(status) == 'undefined') return;
   if(status.indexOf('종료') > -1) {
     deleteItem(no);
   }else {
     var detail = getDetail(no);
     detail['no'] = no;
-    detail['status'] = status;
+    detail['상태'] = status;
     var db = MongoClient.connect.sync(MongoClient, DB_URL);
     var col = db.collection('list');
     col.replaceOne.sync(col, { 'no': no }, detail, { 'upsert': true });
@@ -104,7 +149,7 @@ var saveItems = function(items) {
 var deleteOldItems = function(before) {
   var db = MongoClient.connect.sync(MongoClient, DB_URL);
   var col = db.collection('list');
-  col.deleteMany.sync(col, { 'date': { '$lt': dateToString(before) } });
+  col.deleteMany.sync(col, { '접수일시': { '$lt': dateToString(before) } });
   db.close.sync(db);
 };
 
