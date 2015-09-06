@@ -48,7 +48,7 @@ var parseDetailPage = function(body) {
   window.close();
 
   //축종 분류
-  var regex = /\[(.+)\]\s*(.+)/;
+  var regex = /\[(.+)\]\s*(.*)/;
   var group = regex.exec(data['품종']);
   data['축종'] = group[1];
   data['품종'] = group[2];
