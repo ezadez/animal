@@ -173,5 +173,6 @@ Sync(function() {
 }, function(err, result) {
   if(err != null) {
     console.log('Something went wrong: ' + err);
+    console.log(err.stack);
   }
 });
