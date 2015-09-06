@@ -123,6 +123,7 @@ var deleteItem = function(no) {
 var saveItem = function(item) {
   var no = item['no'];
   var status = item['상태'];
+  console.log('inserting..... ' + no);
   if(typeof(status) == 'undefined') return;
   if(status.indexOf('종료') > -1) {
     deleteItem(no);
@@ -134,7 +135,6 @@ var saveItem = function(item) {
     var col = db.collection('list');
     col.replaceOne.sync(col, { 'no': no }, detail, { 'upsert': true });
     db.close.sync(db);
-    console.log('inserted ' + no);
   }
 };
 
