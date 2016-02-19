@@ -50,19 +50,19 @@ var parseDetailPage = function(body) {
   //축종 분류
   var regex = /\[(.+)\]\s*(.*)/;
   var group = regex.exec(data['품종']);
-  data['축종'] = group[1];
-  data['품종'] = group[2];
+  data['축종'] = group && group[1];
+  data['품종'] = group && group[2];
   //나이/체중 분류
   regex = /(\S+)\s*\/\s*(\S+)\s*\(kg\)/i;
-  var group = regex.exec(data['나이/체중']);
-  data['나이'] = group[1];
-  data['체중'] = group[2];
+  group = regex.exec(data['나이/체중']);
+  data['나이'] = group && group[1];
+  data['체중'] = group && group[2];
   delete data['나이/체중'];
   //공고기한 시작끝 분류
   regex = /(\S+)\s*~\s*(\S+)/;
-  var group = regex.exec(data['공고기한']);
-  data['공고시작'] = group[1];
-  data['공고끝'] = group[2];
+  group = regex.exec(data['공고기한']);
+  data['공고시작'] = group && group[1];
+  data['공고끝'] = group && group[2];
   delete data['공고기한'];
 
   return data;
